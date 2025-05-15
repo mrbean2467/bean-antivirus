@@ -1,0 +1,42 @@
+import os
+import hashlib
+import requests
+
+# Payment verification API (replace with real payment provider)
+PAYMENT_API_URL = "https://your-payment-provider.com/verify_subscription"
+
+# Example database of known malicious file hashes
+known_virus_hashes = ["5d41402abc4b2a76b9719d911017c592", "e99a18c428cb38d5f260853678922e03"]
+
+def verify_payment(user_email):
+    """Check if the user has an active subscription."""
+    response = requests.get(f"{PAYMENT_API_URL}?email={user_email}")
+    return response.status_code == 200  # Payment verified if status is 200
+
+def scan_directory(directory, user_email):
+    """Scan files only if payment is verified."""
+    if not verify_payment(user_email):
+        print("❌ Access Denied: Please subscribe for $1/month.")
+        return
+
+    print(f"Scanning directory: {directory}")
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            file_path = os.path.join(root, file)
+            file_hash = calculate_hash(file_path)
+            if file_hash in known_virus_hashes:
+                print(f"⚠️ WARNING: Suspicious file detected - {file_path}")
+
+def calculate_hash(file_path):
+    """Generate MD5 hash of a file."""
+    try:
+        with open(file_path, "rb") as f:
+            file_bytes = f.read()
+            return hashlib.md5(file_bytes).hexdigest()
+    except Exception as e:
+        print(f"Error reading file {file_path}: {e}")
+        return None
+
+# Example usage: Scan if subscription is active
+user_email = "player@example.com"  # Replace with actual user email input
+scan_directory("C:/Users/YourUsername/Documents", user_email)
